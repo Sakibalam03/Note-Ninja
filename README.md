@@ -16,7 +16,9 @@ Note Ninja is a modern web application that provides real-time speech-to-text tr
 - Responsive design for all devices
 - Modern, intuitive user interface
 
- 
+  ![alt text][logo]
+
+[logo]: https://github.com/Sakibalam03/Note-Ninja/blob/main/Assets/mp3%20Upload.png "Logo Title Text 2"
 
 # 🛠 Technologies Used
 
