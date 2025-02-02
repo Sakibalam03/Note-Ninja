@@ -49,7 +49,7 @@ pip install -r requirements.txt
 3. Set up your environment variables:
 bash
 cp .env.example .env
-# Edit .env with your configuration
+Edit .env with your configuration
 
 
 4. Start the development server:
