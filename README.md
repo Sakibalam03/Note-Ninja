@@ -4,7 +4,7 @@ Note Ninja is a modern web application that provides real-time speech-to-text tr
 
  
 
-🌟 Features
+# 🌟 Features
 
 - Real-time voice recording with visual feedback
 - Audio file upload support (drag & drop enabled)
@@ -16,7 +16,7 @@ Note Ninja is a modern web application that provides real-time speech-to-text tr
 
  
 
-🛠 Technologies Used
+# 🛠 Technologies Used
 
 - HTML5
 - CSS3 (Custom properties, Flexbox, Grid)
@@ -26,14 +26,14 @@ Note Ninja is a modern web application that provides real-time speech-to-text tr
 - Open AI Whisper
 - bart-large-cnn
 
-📋 Prerequisites
+# 📋 Prerequisites
 
 Before running this project, make sure you have:
 
 - A modern web browser with JavaScript enabled
 - Python 3.7 or higher (for the backend server)
 
-🚀 Installation
+# 🚀 Installation
 
 1. Clone the repository:
 bash
@@ -59,7 +59,7 @@ python app.py
 
 The application will be available at http://localhost:5000
 
-⚙ Configuration
+# ⚙ Configuration
 
 Create a .env file in the root directory with the following variables:
 
@@ -69,7 +69,7 @@ FLASK_ENV=development
 OPENAI_API_KEY=your_openai_api_key
 
 
-📁 Project Structure
+# 📁 Project Structure
 
 
 note-ninja/
@@ -90,7 +90,7 @@ note-ninja/
 
 
 
-📝 Dependencies
+# 📝 Dependencies
 
 Backend Dependencies
 
@@ -108,24 +108,24 @@ Frontend Dependencies
   - MediaRecorder
   - Fetch API
 
-🔐 Security Considerations
+# 🔐 Security Considerations
 
 - Implement proper CORS policies
 - Set up rate limiting for API endpoints
 - Validate file types and sizes
 - Keep dependencies updated
 
-🌐 Browser Support
+# 🌐 Browser Support
 
 - Chrome (latest)
 
 
-🙏 Acknowledgments
+# 🙏 Acknowledgments
 
 - OpenAI for Whisper API
 - All contributors who have helped shape Note Ninja
 
-⚠ Known Issues
+# ⚠ Known Issues
 
 - Audio recording may not work in some browsers due to microphone permission issues
 - Large audio files may take longer to process
