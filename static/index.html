@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Ninja - AI Meeting Assistant</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF1B51, #751BFF);
+            --bg-dark: #050505;
+            --light: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --nav-bg: rgba(40, 12, 80, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .curved-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: radial-gradient(ellipse at 50% 70%, rgba(117, 27, 255, 0.15), transparent 70%);
+        }
+
+        .curved-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(180deg, transparent, rgba(255, 27, 81, 0.1));
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            transform: scaleX(1.5);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .ai-badge {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.7rem 1.2rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero {
+            text-align: center;
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        h1 {
+            font-size: 3rem;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+        }
+
+        .title-muted {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .mic-container {
+            width: 130px;
+            height: 130px;
+            margin: 3rem;
+            background: var(--primary-gradient);
+            border-radius: 40%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .mic-rings {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .mic-icon {
+            width: 50px;
+            height: 50px;
+            color: var(--light);
+        }
+
+        .curved-nav {
+            background: var(--nav-bg);
+            padding: 0.7rem;
+            border-radius: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 3rem;
+        }
+
+        .nav-link {
+            color: var(--light);
+            text-decoration: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .mic-container.recording {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 27, 81, 0.5);
+        }
+
+        .mic-container.recording .mic-icon {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .upload-section {
+            width: 50%;
+            height: 100%;
+            margin: auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-section:hover,
+        .upload-section.drag-over {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+
+        #transcriptionText {
+            width: 80%;
+            margin: auto;
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border-radius: 15px;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .curved-nav {
+                flex-wrap: wrap;
+            }
+
+            .upload-section {
+                width: 90%;
+            }
+        }
+
+        .upload-summary-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            margin: auto;
+            padding: 0 2rem;
+        }
+
+        .upload-section {
+            width: 100%;
+            padding: 2rem;
+            background: var(--card-bg);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-section {
+            position: relative;
+            height: 100%;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .save-button {
+            position: absolute;
+            bottom: -50px;
+            right: 0;
+            background: var(--primary-gradient);
+            border: none;
+            color: var(--light);
+            padding: 0.7rem 1.2rem;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 27, 81, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .upload-summary-container {
+                grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="curved-bg">
+        <div class="curved-line"></div>
+    </div>
+
+    <div class="container">
+        <main class="hero">
+            <div class="ai-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                AI Voice Command
+            </div>
+
+            <h1>
+                <span class="title-muted">Effortless control</span><br>
+                <span>with Note Ninja</span>
+            </h1>
+
+            <div class="mic-container" id="recordButton">
+                <svg class="mic-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                    <path
+                        d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                </svg>
+            </div>
+        </main>
+
+        <div id="transcriptionText"></div>
+
+        <div class="upload-summary-container">
+            <div class="upload-section">
+                <input type="file" id="audioFileInput" accept="audio/*" style="display: none">
+                <label for="audioFileInput" style="cursor: pointer">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <p>Drop your audio files here or click to upload</p>
+                </label>
+            </div>
+
+            <div class="summary-section">
+                <div class="summary-header">
+                    <h3>Text Summary</h3>
+                    <div class="status-indicator">Ready</div>
+                </div>
+                <div class="summary-content" id="summaryContent">
+                    Your text summary will appear here after processing...
+                </div>
+                <button class="save-button" id="saveButton" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Save as Text File
+                </button>
+                
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="static/js/main.js"></script>
+</body>
+
+</html>
