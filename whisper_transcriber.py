@@ -1,7 +1,5 @@
-from transformers import pipeline
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-import soundfile as sf
 import os
 from datetime import datetime
 

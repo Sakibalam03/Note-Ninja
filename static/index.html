@@ -238,10 +238,57 @@
             backdrop-filter: blur(10px);
         }
 
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 24px;
+        }
+
+        .status-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-top-color: #FF1B51;
+            border-radius: 50%;
+            display: none;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .status-spinner.visible {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .summary-content {
+            min-height: 160px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .summary-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .summary-button,
         .save-button {
-            position: absolute;
-            bottom: -50px;
-            right: 0;
             background: var(--primary-gradient);
             border: none;
             color: var(--light);
@@ -255,7 +302,16 @@
             transition: all 0.3s ease;
         }
 
-        .save-button:hover {
+        .summary-button:disabled,
+        .save-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.45;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .summary-button:hover:not(:disabled),
+        .save-button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 27, 81, 0.2);
         }
@@ -314,21 +370,35 @@
 
             <div class="summary-section">
                 <div class="summary-header">
-                    <h3>Text Summary</h3>
-                    <div class="status-indicator">Ready</div>
+                    <h3>Transcript</h3>
+                    <div class="status-wrap">
+                        <span class="status-spinner" id="statusSpinner"></span>
+                        <div class="status-indicator">Ready</div>
+                    </div>
                 </div>
                 <div class="summary-content" id="summaryContent">
-                    Your text summary will appear here after processing...
+                    Your transcript will appear here after processing...
                 </div>
-                <button class="save-button" id="saveButton" style="display: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                        <polyline points="17 21 17 13 7 13 7 21" />
-                        <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    Save as Text File
-                </button>
-                
+                <div class="summary-actions">
+                    <button class="summary-button" id="summarizeButton" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M4 5h16" />
+                            <path d="M4 12h12" />
+                            <path d="M4 19h8" />
+                        </svg>
+                        Summarize
+                    </button>
+                    <button class="save-button" id="saveButton" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Save as Text File
+                    </button>
+                </div>
             </div>
         </div>
 

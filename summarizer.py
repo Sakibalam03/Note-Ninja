@@ -1,19 +1,33 @@
-from transformers import pipeline
-import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-import soundfile as sf
 import os
-from datetime import datetime
+from transformers import pipeline
 
-def summarize_file(input_file, summarizer):
+_summarizer = None
+
+def get_summarizer():
+    global _summarizer
+    if _summarizer is None:
+        _summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+    return _summarizer
+
+def summarize_file(input_file, output_file=None, summarizer=None):
     """Summarize a single file using the provided summarizer pipeline."""
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
             article_text = f.read()
+
+        if not article_text.strip():
+            return False, "No text provided for summarization"
+
+        summarizer = summarizer or get_summarizer()
         
-        # Generate the summary
         summary = summarizer(article_text, max_length=130, min_length=30, do_sample=False)
-        return True, summary[0]['summary_text']
+        summary_text = summary[0]['summary_text']
+
+        if output_file:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(summary_text)
+
+        return True, summary_text
         
     except Exception as e:
         return False, f"Error processing {input_file}: {str(e)}"
@@ -24,9 +38,8 @@ def process_directory(input_dir="transcripts", output_dir="summaries"):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Initialize the summarization pipeline once to reuse
     try:
-        summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+        summarizer = get_summarizer()
     except Exception as e:
         print(f"Error initializing summarizer: {str(e)}")
         return

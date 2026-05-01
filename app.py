@@ -1,7 +1,9 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+from threading import Lock, Thread
+from uuid import uuid4
 from whisper_transcriber import WhisperTranscriber
 from summarizer import summarize_file
 import logging
@@ -22,8 +24,54 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
 
+JOB_TTL = timedelta(hours=1)
+job_store = {}
+job_lock = Lock()
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def cleanup_jobs():
+    cutoff = datetime.now() - JOB_TTL
+    with job_lock:
+        expired_job_ids = [
+            job_id
+            for job_id, job in job_store.items()
+            if job['created_at'] < cutoff
+        ]
+        for job_id in expired_job_ids:
+            del job_store[job_id]
+
+def update_job(job_id, **updates):
+    with job_lock:
+        if job_id in job_store:
+            job_store[job_id].update(updates)
+
+def transcribe_worker(job_id, filepath):
+    try:
+        logger.info("Starting background transcription for job %s", job_id)
+        transcriber = WhisperTranscriber()
+        success, message = transcriber.transcribe_audio(filepath)
+
+        if not success:
+            logger.error("Transcription failed for job %s: %s", job_id, message)
+            update_job(job_id, status='error', error_message=message)
+            return
+
+        transcript_path = message.split("saved to ")[-1]
+        with open(transcript_path, 'r', encoding='utf-8') as f:
+            transcript_text = f.read()
+
+        update_job(
+            job_id,
+            status='done',
+            transcript=transcript_text,
+            error_message=None,
+        )
+        logger.info("Background transcription completed for job %s", job_id)
+    except Exception as e:
+        logger.error("Error processing job %s: %s", job_id, str(e), exc_info=True)
+        update_job(job_id, status='error', error_message=str(e))
 
 @app.route('/')
 def index():
@@ -51,40 +99,34 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         try:
-            # Create a timestamp for unique filename
+            cleanup_jobs()
+
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"audio_{timestamp}_{secure_filename(file.filename)}"
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             
             logger.info(f"Saving file to {filepath}")
             file.save(filepath)
-            
-            # Initialize transcriber and process the file
-            logger.info("Initializing WhisperTranscriber")
-            transcriber = WhisperTranscriber()
-            
-            logger.info("Starting transcription")
-            success, message = transcriber.transcribe_audio(filepath)
-            
-            if success:
-                # Get the path of the generated transcript
-                logger.info("Transcription successful")
-                transcript_path = message.split("saved to ")[-1]
-                
-                # Read the transcript
-                with open(transcript_path, 'r', encoding='utf-8') as f:
-                    transcript_text = f.read()
-                
-                return jsonify({
-                    'status': 'success',
-                    'transcript': transcript_text
-                })
-            else:
-                logger.error(f"Transcription failed: {message}")
-                return jsonify({
-                    'status': 'error',
-                    'message': f'Transcription failed: {message}'
-                }), 500
+
+            job_id = str(uuid4())
+            with job_lock:
+                job_store[job_id] = {
+                    'status': 'pending',
+                    'transcript': None,
+                    'error_message': None,
+                    'created_at': datetime.now(),
+                }
+
+            Thread(
+                target=transcribe_worker,
+                args=(job_id, filepath),
+                daemon=True,
+            ).start()
+
+            return jsonify({
+                'status': 'pending',
+                'job_id': job_id
+            }), 202
                 
         except Exception as e:
             logger.error(f"Error processing file: {str(e)}", exc_info=True)
@@ -98,6 +140,24 @@ def upload_file():
         'status': 'error',
         'message': 'Invalid file type'
     }), 400
+
+@app.route('/status/<job_id>')
+def job_status(job_id):
+    cleanup_jobs()
+
+    with job_lock:
+        job = job_store.get(job_id)
+        if not job:
+            return jsonify({
+                'status': 'error',
+                'error_message': 'Unknown or expired job id'
+            }), 404
+
+        return jsonify({
+            'status': job['status'],
+            'transcript': job.get('transcript'),
+            'error_message': job.get('error_message')
+        })
 
 @app.route('/summarize', methods=['POST'])
 def summarize_text():
@@ -153,6 +213,6 @@ if __name__ == '__main__':
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         logger.info(f"Upload folder verified: {UPLOAD_FOLDER}")
         
-        app.run(debug=True)
+        app.run(debug=True, use_reloader=False)
     except Exception as e:
         logger.error(f"Error starting application: {str(e)}", exc_info=True)
