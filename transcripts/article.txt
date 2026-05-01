@@ -1,0 +1,17 @@
+I want to build a portfolio website/landing page for the person who's resume i have attached. I want the website to be responsive, dynamic, and should encompass the entirety of the resume. The website should be unique and highly visually appealing. Use built-in/predefined components/widgets, glass morphism, perpetual scroll effects and other effects where necessary but i want a exceptionally good looking website. Quantify and showcase wherever necessary.Give special emphasis to the following sections: 
+Reliability Availability Maintainability Studies
+Safety Review Workshops Chaired
+SIL/ LOPA Workshops Chaired
+Detailed Professional Experience:
+	NRGTech
+		MD
+			Projects......
+	Technip Engineering
+		Head and Safety Engineer
+			Projects...
+		Principal Safety Engineer
+			Projects
+	Engineers India Ltd
+		Management Trainee
+			Projects
+Give me separate html css, js code files
