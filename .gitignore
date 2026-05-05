@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 
 Recording.mp3
+tmp/
 summaries/
 transcripts/
 uploads/

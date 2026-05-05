@@ -16,10 +16,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, static_folder='static')
 logger.info("Flask app initialized")
 
-# Configure upload folder
+# Configure upload and temp folders
 UPLOAD_FOLDER = 'uploads'
+TMP_FOLDER = 'tmp'
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'flac', 'm4a', 'ogg', 'webm'}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(TMP_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
@@ -162,24 +164,19 @@ def job_status(job_id):
 @app.route('/summarize', methods=['POST'])
 def summarize_text():
     logger.info("Summarize endpoint called")
+    uid = str(uuid4())
+    temp_input = os.path.join(TMP_FOLDER, f"temp_{uid}.txt")
+    temp_output = os.path.join(TMP_FOLDER, f"summary_{uid}.txt")
     try:
         data = request.json
         text = data.get('text', '')
-        
-        # Save the text to a temporary file
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        temp_input = f"temp_{timestamp}.txt"
-        temp_output = f"summary_{timestamp}.txt"
-        
+
         with open(temp_input, 'w', encoding='utf-8') as f:
             f.write(text)
-        
+
         logger.info("Calling summarize_file")
         success, summary = summarize_file(temp_input, temp_output)
-        
-        # Clean up temporary input file
-        os.remove(temp_input)
-        
+
         if success:
             logger.info("Summary generated successfully")
             return jsonify({
@@ -192,13 +189,19 @@ def summarize_text():
                 'status': 'error',
                 'message': summary
             }), 500
-            
+
     except Exception as e:
         logger.error(f"Error in summarize_text: {str(e)}", exc_info=True)
         return jsonify({
             'status': 'error',
             'message': str(e)
         }), 500
+    finally:
+        for path in (temp_input, temp_output):
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                pass
 
 @app.route('/test')
 def test():
@@ -208,11 +211,15 @@ def test():
 if __name__ == '__main__':
     logger.info("Starting Flask application...")
     try:
-        # Create required directories
         os.makedirs('static/js', exist_ok=True)
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        os.makedirs(TMP_FOLDER, exist_ok=True)
         logger.info(f"Upload folder verified: {UPLOAD_FOLDER}")
-        
-        app.run(debug=True, use_reloader=False)
+
+        flask_debug = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+        if flask_debug and os.getenv('FLASK_ENV', 'development') != 'development':
+            logger.warning("FLASK_DEBUG is enabled in a non-development environment — Werkzeug debugger exposed!")
+
+        app.run(debug=flask_debug, use_reloader=False)
     except Exception as e:
         logger.error(f"Error starting application: {str(e)}", exc_info=True)
